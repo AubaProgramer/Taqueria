@@ -1,31 +1,22 @@
-import sqlite3
 import matplotlib.pyplot as plt
+import database
 
 def mostrar_grafica_ventas():
-    conn = sqlite3.connect('taqueria.db')
-    cursor = conn.cursor()
+    datos = database.obtener_datos_grafica()
     
-    # Consultamos cuánto se ha vendido de cada cosa
-    cursor.execute('SELECT producto, SUM(precio) FROM ventas GROUP BY producto')
-    datos = cursor.fetchall()
-    conn.close()
-
     if not datos:
-        print("No hay ventas registradas todavía.")
+        from tkinter import messagebox
+        messagebox.showinfo("Sin Datos", "Aún no hay ventas registradas para graficar.")
         return
 
-    productos = [fila[0] for fila in datos]
-    totales = [fila[1] for fila in datos]
+    productos = [d[0] for d in datos]
+    totales = [d[1] for d in datos]
 
-    # Crear la gráfica
     plt.figure(figsize=(10, 6))
-    plt.bar(productos, totales, color='orange')
+    plt.bar(productos, totales, color='skyblue', edgecolor='navy')
     plt.title('Ventas Totales por Producto - Tacos Esther')
     plt.xlabel('Productos')
-    plt.ylabel('Dinero Recaudado ($)')
+    plt.ylabel('Ingresos ($)')
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
-
-if __name__ == "__main__":
-    mostrar_grafica_ventas()

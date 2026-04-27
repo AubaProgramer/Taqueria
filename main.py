@@ -8,16 +8,26 @@ class AplicacionPrincipal:
     def __init__(self):
         database.crear_tablas() # Crea la DB al iniciar
         self.root = tk.Tk()
+        self.root.title("Tacos Esther - Sistema de Gestión")
+        
+        # --- NUEVO: Escuchar el evento de Logout ---
+        # Cuando en gui_ventas se ejecute event_generate("<<Logout>>"), 
+        # esta línea hará que se llame automáticamente a mostrar_login
+        self.root.bind("<<Logout>>", lambda e: self.mostrar_login())
+        
         self.mostrar_login()
         self.root.mainloop()
 
     def mostrar_login(self):
-        # Limpiamos la ventana si había algo antes
+        # Limpiamos la ventana (quita la pantalla de ventas si existe)
         for widget in self.root.winfo_children():
             widget.destroy()
             
+        # Ajustamos el tamaño para que el login se vea centrado y pequeño
+        self.root.geometry("400x550")
+            
         self.app_login = VentanaLogin(self.root)
-        # Cambiamos el botón para que use nuestra función de validación
+        # Configuramos el botón para validar datos
         self.app_login.btn_entrar.config(command=self.validar_y_entrar)
 
     def validar_y_entrar(self):
@@ -34,11 +44,14 @@ class AplicacionPrincipal:
             messagebox.showerror("Error", "Usuario o contraseña incorrectos")
 
     def mostrar_ventas(self, nombre, rol):
-        # Limpiamos la ventana del login para poner la de ventas
+        # Limpiamos la ventana del login
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        # Cargamos la interfaz de ventas en la misma ventana principal
+        # Ajustamos el tamaño a uno más grande para el punto de venta
+        self.root.geometry("1100x750")
+        
+        # Cargamos la interfaz de ventas
         VentanaVentas(self.root, nombre, rol)
 
 if __name__ == "__main__":

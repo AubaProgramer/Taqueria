@@ -55,3 +55,24 @@ def crear_tablas():
 if __name__ == "__main__":
     crear_tablas()
     print("Base de datos configurada con éxito.")
+
+def guardar_venta(producto, precio, carne=None, con_queso=0):
+    """Guarda una venta en la base de datos"""
+    conn = sqlite3.connect('taqueria.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO ventas (producto, carne, con_queso, precio) 
+        VALUES (?, ?, ?, ?)
+    ''', (producto, carne, con_queso, precio))
+    conn.commit()
+    conn.close()
+
+def obtener_datos_grafica():
+    """Trae el dinero total acumulado por cada producto para la gráfica"""
+    conn = sqlite3.connect('taqueria.db')
+    cursor = conn.cursor()
+    # Sumamos el precio de cada producto vendido
+    cursor.execute('SELECT producto, SUM(precio) FROM ventas GROUP BY producto')
+    datos = cursor.fetchall()
+    conn.close()
+    return datos
