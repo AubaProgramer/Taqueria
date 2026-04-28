@@ -39,11 +39,11 @@ class VentanaVentas:
         self.crear_interfaz_comida()
 
     def crear_interfaz_ticket(self):
-        # Estilo para la tabla
+        # ... (Mantén el estilo y el Treeview igual que antes) ...
         style = ttk.Style()
         style.configure("Treeview", font=("Arial", 10), rowheight=28)
         
-        self.tree = ttk.Treeview(self.frame_ticket, columns=("Cant", "Prod", "Subt"), show="headings", height=18)
+        self.tree = ttk.Treeview(self.frame_ticket, columns=("Cant", "Prod", "Subt"), show="headings", height=12)
         self.tree.heading("Cant", text="Cant")
         self.tree.heading("Prod", text="Producto")
         self.tree.heading("Subt", text="Subtotal")
@@ -53,10 +53,22 @@ class VentanaVentas:
         self.tree.pack(pady=5)
 
         self.lbl_total = tk.Label(self.frame_ticket, text="TOTAL: $0.00", 
-                                 font=("Arial", 26, "bold"), fg=self.color_verde, bg=self.color_blanco)
-        self.lbl_total.pack(pady=15)
+                                 font=("Arial", 22, "bold"), fg=self.color_verde, bg=self.color_blanco)
+        self.lbl_total.pack(pady=5)
 
-        # Botón Cobrar Estilo Moderno
+        # --- SECCIÓN NUEVA: DATOS DE ENTREGA Y PAGO ---
+        frame_entrega = tk.Frame(self.frame_ticket, bg=self.color_blanco)
+        frame_entrega.pack(fill="x", pady=10)
+
+        tk.Label(frame_entrega, text="Dirección de Envío:", bg=self.color_blanco, font=("Arial", 9, "bold")).pack(anchor="w")
+        self.ent_direccion = tk.Entry(frame_entrega, font=("Arial", 10), relief="solid", bd=1)
+        self.ent_direccion.pack(fill="x", pady=2)
+
+        tk.Label(frame_entrega, text="Pagó con ($):", bg=self.color_blanco, font=("Arial", 9, "bold")).pack(anchor="w")
+        self.ent_pago = tk.Entry(frame_entrega, font=("Arial", 10), relief="solid", bd=1)
+        self.ent_pago.pack(fill="x", pady=2)
+        # -----------------------------------------------
+
         tk.Button(self.frame_ticket, text="COBRAR E IMPRIMIR", 
                   bg=self.color_verde, fg="white", font=("Arial", 14, "bold"), 
                   relief="flat", height=2, cursor="hand2",
@@ -75,7 +87,11 @@ class VentanaVentas:
         tk.Label(self.frame_menu, text="--- TACOS ---", font=("Arial", 10, "bold"), bg=self.color_fondo).grid(row=0, column=0, pady=5)
         tacos = [("Barbacoa", 18), ("Chicharrón", 18), ("Chorizo", 18), ("Bistec", 21), ("Campechano", 21)]
         for i, (nom, p) in enumerate(tacos):
-            boton_item(self.frame_menu, nom, lambda n=nom, p=p: self.agregar_producto(f"Taco {n}", p, 3)).grid(row=i+1, column=0, pady=3, padx=5)
+            if nom == "Barbacoa":
+                # La barbacoa ahora abre una ventana de selección de término
+                boton_item(self.frame_menu, nom, lambda: self.ventana_termino_barbacoa(18)).grid(row=i+1, column=0, pady=3, padx=5)
+            else:
+                boton_item(self.frame_menu, nom, lambda n=nom, p=p: self.agregar_producto(f"Taco {n}", p, 3)).grid(row=i+1, column=0, pady=3, padx=5)
 
         # --- COLUMNA 1: LONCHES (50/60) ---
         tk.Label(self.frame_menu, text="--- LONCHES ---", font=("Arial", 10, "bold"), bg=self.color_fondo).grid(row=0, column=1, pady=5)
@@ -138,40 +154,77 @@ class VentanaVentas:
     def ventana_promo(self):
         # Crear ventana emergente
         self.win_promo = tk.Toplevel(self.root)
-        self.win_promo.title("Configurar Mega Promo")
-        self.win_promo.geometry("400x550")
+        self.win_promo.title("Configurar Mega Promo (10 Tacos)")
+        self.win_promo.geometry("450x650")
         self.win_promo.configure(bg=self.color_fondo)
+        self.win_promo.grab_set()
 
-        tk.Label(self.win_promo, text="Selecciona los 10 Tacos", 
-                 font=("Arial", 12, "bold"), bg=self.color_fondo).pack(pady=10)
+        tk.Label(self.win_promo, text="Personaliza los 10 Tacos", 
+                 font=("Arial", 14, "bold"), bg=self.color_fondo).pack(pady=15)
 
-        # Diccionario para guardar cuántos de cada uno eligen
+        # Diccionario ampliado para incluir los términos de la barbacoa
         self.seleccion_promo = {
-            "Barbacoa": tk.IntVar(value=0),
+            "Barbacoa Blandos": tk.IntVar(value=0),
+            "Barbacoa Medios": tk.IntVar(value=0),
+            "Barbacoa Dorados": tk.IntVar(value=0),
             "Chicharrón": tk.IntVar(value=0),
             "Chorizo": tk.IntVar(value=0),
             "Bistec": tk.IntVar(value=0),
             "Campechano": tk.IntVar(value=0)
         }
 
-        # Crear selectores (Spinbox) para cada carne
+        # Crear selectores (Spinbox) para cada opción
         for carne in self.seleccion_promo:
             frame = tk.Frame(self.win_promo, bg=self.color_fondo)
-            frame.pack(fill="x", padx=40, pady=5)
+            frame.pack(fill="x", padx=50, pady=4)
             
-            tk.Label(frame, text=f"{carne}:", font=("Arial", 10), bg=self.color_fondo, width=15, anchor="w").pack(side="left")
+            # Color especial para resaltar las opciones de barbacoa
+            color_lbl = "#D35400" if "Barbacoa" in carne else self.color_texto
             
-            # Spinbox para elegir cantidad (0 a 10)
+            tk.Label(frame, text=f"{carne}:", font=("Arial", 10, "bold"), 
+                     bg=self.color_fondo, fg=color_lbl, width=18, anchor="w").pack(side="left")
+            
             tk.Spinbox(frame, from_=0, to=10, textvariable=self.seleccion_promo[carne], 
-                       width=5, font=("Arial", 10)).pack(side="right")
+                       width=5, font=("Arial", 11), justify="center").pack(side="right")
 
-        tk.Label(self.win_promo, text="* Bistec/Campechano +$3 c/u", 
-                 font=("Arial", 8, "italic"), fg="red", bg=self.color_fondo).pack(pady=5)
+        # Nota de cargos extra
+        tk.Label(self.win_promo, text="* Bistec/Campechano +$3 c/u\n* Barbacoa no tiene costo extra", 
+                 font=("Arial", 9, "italic"), fg="red", bg=self.color_fondo).pack(pady=10)
 
         # Botón para confirmar
         tk.Button(self.win_promo, text="AGREGAR PROMO AL TICKET", 
-                  bg=self.color_verde, fg="white", font=("Arial", 10, "bold"),
-                  relief="flat", height=2, command=self.confirmar_promo).pack(pady=20, fill="x", padx=50)
+                  bg=self.color_verde, fg="white", font=("Arial", 11, "bold"),
+                  relief="flat", height=2, cursor="hand2", 
+                  command=self.confirmar_promo).pack(pady=20, fill="x", padx=60)
+
+    def confirmar_promo(self):
+        # Sumar todos los tacos seleccionados
+        total_tacos = sum(var.get() for var in self.seleccion_promo.values())
+        
+        if total_tacos != 10:
+            messagebox.showwarning("Cantidad Incorrecta", 
+                                   f"La promo debe tener exactamente 10 tacos.\nLlevas seleccionados: {total_tacos}")
+            return
+
+        # Calcular extras solo de Bistec y Campechano ($3 extra c/u)
+        extra_bistec = self.seleccion_promo["Bistec"].get() * 3
+        extra_camp = self.seleccion_promo["Campechano"].get() * 3
+        precio_final_promo = 205 + extra_bistec + extra_camp
+
+        # Crear lista detallada para el ticket
+        detalles = []
+        for carne, var in self.seleccion_promo.items():
+            if var.get() > 0:
+                detalles.append(f"{var.get()} {carne}")
+        
+        descripcion = "MEGA PROMO (" + ", ".join(detalles) + ")"
+
+        # Agregar al ticket principal
+        self.total_actual += precio_final_promo
+        self.tree.insert("", "end", values=(1, descripcion, f"${precio_final_promo:.2f}"))
+        self.lbl_total.config(text=f"TOTAL: ${self.total_actual:.2f}")
+        
+        self.win_promo.destroy()
 
     def confirmar_promo(self):
         total_tacos = sum(var.get() for var in self.seleccion_promo.values())
@@ -206,43 +259,126 @@ class VentanaVentas:
             messagebox.showwarning("Venta", "El ticket está vacío")
             return
         
+        # Validar el pago y calcular cambio
+        try:
+            monto_pago = float(self.ent_pago.get()) if self.ent_pago.get() else self.total_actual
+            if monto_pago < self.total_actual:
+                messagebox.showerror("Error", "El monto de pago es menor al total")
+                return
+            cambio = monto_pago - self.total_actual
+        except ValueError:
+            messagebox.showerror("Error", "Ingresa un monto de pago válido")
+            return
+
+        direccion = self.ent_direccion.get() if self.ent_direccion.get() else "Venta en Mostrador"
+
+        # ... (Crear carpeta y guardar en DB igual que antes) ...
         carpeta = "Tickets_Generados"
         if not os.path.exists(carpeta): os.makedirs(carpeta)
-
         fecha_obj = datetime.datetime.now()
         nombre_pdf = os.path.join(carpeta, f"Ticket_{fecha_obj.strftime('%Y%m%d_%H%M%S')}.pdf")
-        
+
         try:
-            # Guardar en DB
+            # 1. Guardar en Base de Datos
             for item in items:
                 v = self.tree.item(item)["values"]
                 database.guardar_venta(v[1], float(str(v[2]).replace('$', '')))
 
-            # PDF
+            # 2. Configurar PDF
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", "B", 20)
-            pdf.cell(0, 10, "TACOS ESTHER - DESDE 2013", ln=True, align="C")
-            pdf.set_font("Arial", "", 12)
-            pdf.cell(0, 10, f"Fecha: {fecha_obj.strftime('%d/%m/%Y %H:%M')}", ln=True, align="C")
-            pdf.ln(10)
+            pdf.cell(0, 10, "TACOS ESTHER - ENTREGA", ln=True, align="C")
+            pdf.set_font("Arial", "", 11)
+            pdf.cell(0, 7, f"Fecha: {fecha_obj.strftime('%d/%m/%Y %H:%M')}", ln=True, align="C")
+            pdf.ln(5)
             
-            # Tabla PDF
+            # 3. Datos del cliente (Dirección)
             pdf.set_font("Arial", "B", 12)
-            pdf.cell(30, 10, "Cant", 1); pdf.cell(110, 10, "Producto", 1); pdf.cell(50, 10, "Precio", 1, ln=True)
-            pdf.set_font("Arial", "", 12)
+            pdf.multi_cell(0, 10, f"DIRECCIÓN: {direccion}", border=1, align="L")
+            pdf.ln(5)
+
+            # 4. Encabezados de la Tabla
+            pdf.set_font("Arial", "B", 11)
+            pdf.cell(20, 8, "Cant", 1, 0, 'C')
+            pdf.cell(120, 8, "Producto", 1, 0, 'L')
+            pdf.cell(40, 8, "Subt", 1, 1, 'R')
+            
+            # 5. LISTADO DE PRODUCTOS (Aquí está el arreglo del encimado)
+            pdf.set_font("Arial", "", 10)
             for item in items:
                 v = self.tree.item(item)["values"]
-                pdf.cell(30, 10, str(v[0]), 1)
-                pdf.cell(110, 10, str(v[1]), 1)
-                pdf.cell(50, 10, str(v[2]), 1, ln=True)
+                cant = str(v[0])
+                prod = str(v[1])
+                subt = str(v[2])
 
+                # Guardamos la posición actual
+                x = pdf.get_x()
+                y = pdf.get_y()
+
+                # Celda de Cantidad
+                pdf.cell(20, 10, cant, 1, 0, 'C')
+                
+                # MultiCelda para el Producto (esto evita que se encime)
+                # Si el texto es largo, salta de línea solo
+                pdf.multi_cell(120, 5, prod, 1, 'L') 
+                
+                # Calculamos cuánto bajó la MultiCelda para que el precio quede alineado
+                final_y = pdf.get_y()
+                altura_fila = final_y - y
+                
+                # Regresamos a la posición para poner el Subtotal a la derecha
+                pdf.set_xy(x + 140, y)
+                pdf.cell(40, altura_fila, subt, 1, 1, 'R')
+
+            # 6. Totales y Cambio
             pdf.ln(5)
-            pdf.set_font("Arial", "B", 14)
-            pdf.cell(0, 10, f"TOTAL: ${self.total_actual:.2f}", ln=True, align="R")
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(0, 8, f"TOTAL: ${self.total_actual:.2f}", ln=True, align="R")
+            pdf.cell(0, 8, f"PAGÓ CON: ${monto_pago:.2f}", ln=True, align="R")
             
+            # Si hay cambio, lo ponemos en rojo
+            if cambio > 0:
+                pdf.set_text_color(200, 0, 0)
+            pdf.cell(0, 8, f"CAMBIO: ${cambio:.2f}", ln=True, align="R")
+            
+            # 7. Finalizar
             pdf.output(nombre_pdf)
-            messagebox.showinfo("Éxito", f"Venta guardada en {carpeta}")
+            messagebox.showinfo("Venta Exitosa", f"Cambio a entregar: ${cambio:.2f}\nTicket guardado.")
+            
+            # Limpiar campos
+            self.ent_direccion.delete(0, tk.END)
+            self.ent_pago.delete(0, tk.END)
             self.limpiar_ticket()
+            
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo crear ticket: {e}")
+        
+    def ventana_termino_barbacoa(self, precio_base):
+        # Crear ventana emergente pequeña
+        self.win_termino = tk.Toplevel(self.root)
+        self.win_termino.title("Término de la Barbacoa")
+        self.win_termino.geometry("300x250")
+        self.win_termino.configure(bg=self.color_blanco)
+        self.win_termino.grab_set() # Bloquea la ventana principal hasta elegir
+
+        tk.Label(self.win_termino, text="¿Cómo quiere su taco?", 
+                 font=("Arial", 11, "bold"), bg=self.color_blanco).pack(pady=15)
+
+        terminos = ["Blando", "Medio", "Dorado"]
+        for termino in terminos:
+            tk.Button(self.win_termino, text=termino, width=20, height=2,
+                      bg=self.color_fondo, font=("Arial", 10), relief="flat",
+                      command=lambda t=termino: self.confirmar_barbacoa(t, precio_base)).pack(pady=5)
+
+    def confirmar_barbacoa(self, termino, precio_base):
+        nombre_final = f"Taco Barbacoa ({termino})"
+        # Reutilizamos la lógica del queso si está marcado
+        if self.con_queso.get():
+            precio_base += 3
+            nombre_final += " c/Q"
+        
+        self.total_actual += precio_base
+        self.tree.insert("", "end", values=(1, nombre_final, f"${precio_base}"))
+        self.lbl_total.config(text=f"TOTAL: ${self.total_actual:.2f}")
+        self.win_termino.destroy()
