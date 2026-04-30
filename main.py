@@ -24,7 +24,7 @@ class AplicacionPrincipal:
             widget.destroy()
             
         # Ajustamos el tamaño para que el login se vea centrado y pequeño
-        self.root.geometry("400x550")
+        self.root.geometry("600x600")
             
         self.app_login = VentanaLogin(self.root)
         # Configuramos el botón para validar datos

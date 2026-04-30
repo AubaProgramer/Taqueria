@@ -12,7 +12,7 @@ class VentanaLogin:
         self.frame.pack(expand=True, fill="both")
 
         # Título
-        tk.Label(self.frame, text="TAQUERÍA", font=("Arial", 28, "bold"), bg="#f0f0f0", fg="#8B0000").pack(pady=20)
+        tk.Label(self.frame, text="TACOS ESTHER DESDE 2013", font=("Arial", 28, "bold"), bg="#f0f0f0", fg="#8B0000").pack(pady=20)
         tk.Label(self.frame, text="Acceso al Personal", font=("Arial", 12), bg="#f0f0f0", fg="#333").pack()
 
         # Campo: Usuario
