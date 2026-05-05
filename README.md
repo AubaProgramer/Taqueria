@@ -2,10 +2,6 @@
 
 Sistema integral de gestión para taquerías desarrollado en **Python**. Este software automatiza el ciclo de venta, desde la autenticación del personal hasta la emisión de tickets térmicos profesionales.
 
-## 📸 Vista Previa
-| Pantalla de Acceso | Ticket de Venta |
-| :---: | :---: |
-| ![Login](https://github.com/AubaProgramador/Taquería/raw/principal/image_1bdb20.png) | ![Ticket](https://github.com/AubaProgramador/Taquería/raw/principal/image_e62a57.png) |
 
 ## 🚀 Funcionalidades Clave
 * **Seguridad:** Módulo de login con validación de credenciales en base de datos.
