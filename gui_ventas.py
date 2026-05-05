@@ -185,101 +185,111 @@ class VentanaVentas:
         
         try:
             monto_pago = float(self.ent_pago.get()) if self.ent_pago.get() else self.total_actual
-            if monto_pago < self.total_actual:
-                messagebox.showerror("Error", "Monto insuficiente")
-                return
             cambio = monto_pago - self.total_actual
         except ValueError:
             messagebox.showerror("Error", "Monto de pago inválido")
             return
 
-        direccion = self.ent_direccion.get() if self.ent_direccion.get() else "Venta en Mostrador"
+        direccion = self.ent_direccion.get() if self.ent_direccion.get() else "VENTA MOSTRADOR"
         carpeta = "Tickets_Generados"
         if not os.path.exists(carpeta): os.makedirs(carpeta)
         fecha_obj = datetime.datetime.now()
         nombre_pdf = os.path.join(carpeta, f"Ticket_{fecha_obj.strftime('%Y%m%d_%H%M%S')}.pdf")
 
         try:
-            # Guardar en base de datos
-            for item in items:
-                v = self.tree.item(item)["values"]
-                database.guardar_venta(v[1], float(str(v[2]).replace('$', '')))
-
-            # --- CONFIGURACIÓN DEL PDF ---
-            pdf = FPDF()
+            # --- CONFIGURACIÓN DE TICKET TÉRMICO (80mm de ancho) ---
+            # Definimos un ancho de 80mm y un alto dinámico o largo
+            pdf = FPDF(format=(80, 200)) 
             pdf.add_page()
+            pdf.set_margins(5, 5, 5) # Márgenes pequeños como ticket real
             
-            # Encabezado
-            pdf.set_font("Arial", "B", 20)
-            pdf.cell(0, 10, "TACOS ESTHER - ENTREGA", ln=True, align="C")
-            pdf.set_font("Arial", "", 11)
-            pdf.cell(0, 7, f"Fecha: {fecha_obj.strftime('%d/%m/%Y %H:%M')}", ln=True, align="C")
-            pdf.ln(5)
-            
-            # Dirección con recuadro
-            pdf.set_font("Arial", "B", 12)
-            pdf.multi_cell(0, 10, f"DIRECCIÓN: {direccion}", border=1, align="L")
-            pdf.ln(5)
+            # ENCABEZADO
+            pdf.set_font("Arial", "B", 14)
+            pdf.cell(0, 8, "TACOS ESTHER", ln=True, align="C")
+            pdf.set_font("Arial", "", 8)
+            pdf.cell(0, 4, "DESDE 2013", ln=True, align="C")
+            pdf.cell(0, 4, "AV. OBSIDIANA SUR 20", ln=True, align="C") # Puedes cambiar tu dirección
+            pdf.ln(3)
 
-            # Encabezados de tabla
-            pdf.set_font("Arial", "B", 11)
-            pdf.cell(20, 10, "Cant", 1, 0, 'C')
-            pdf.cell(130, 10, "Producto", 1, 0, 'C')
-            pdf.cell(30, 10, "Subt", 1, 1, 'C')
+            # DATOS DE VENTA
+            pdf.set_font("Arial", "", 9)
+            pdf.cell(0, 5, f"FECHA: {fecha_obj.strftime('%d/%m/%Y %H:%M')}", ln=True)
+            pdf.cell(0, 5, "CAJERO: ADMINISTRADOR", ln=True)
+            pdf.cell(0, 5, f"FOLIO: {fecha_obj.strftime('%H%M%S')}", ln=True)
+            pdf.ln(2)
+
+            # LÍNEA DIVISORA
+            pdf.cell(0, 2, "="*35, ln=True, align="C")
             
-            # --- LISTADO DE PRODUCTOS (SOLUCIÓN DEFINITIVA DE LÍNEAS) ---
-            pdf.set_font("Arial", "", 10)
-            
+            # ENCABEZADO TABLA
+            pdf.set_font("Arial", "B", 9)
+            pdf.cell(10, 5, "CANT", 0, 0)
+            pdf.cell(40, 5, "DESCRIPCION", 0, 0)
+            pdf.cell(20, 5, "IMPORTE", 0, 1, 'R')
+            pdf.cell(0, 2, "-"*45, ln=True, align="C")
+
+            # PRODUCTOS
+            pdf.set_font("Arial", "", 8)
+            total_articulos = 0
             for item in items:
                 v = self.tree.item(item)["values"]
                 cant = str(v[0])
-                prod = str(v[1])
+                prod = str(v[1]).upper() # En mayúsculas como la foto
                 subt = str(v[2])
+                total_articulos += int(v[0])
 
-                inicio_y = pdf.get_y()
+                # Manejo de texto largo para que no se encime
+                # Usamos una sola celda para Cant y Subtotal y MultiCell para el nombre
+                pos_y = pdf.get_y()
+                pdf.cell(10, 5, cant, 0, 0)
                 
-                ancho_prod = 120
-                # Calculamos cuántas líneas ocupa el texto
-                num_lineas = len(pdf.multi_cell(ancho_prod, 7, prod, split_only=True))
-                altura_fila = num_lineas * 7 # 7 es el alto de cada línea de texto
+                # Nombre del producto con ajuste de línea
+                pdf.set_xy(15, pos_y)
+                pdf.multi_cell(40, 5, prod, 0, 'L')
+                
+                # Volver a la derecha para el precio
+                pdf.set_xy(55, pos_y)
+                pdf.cell(15, 5, subt, 0, 1, 'R')
 
-               
-                pdf.set_xy(10, inicio_y)
-                pdf.cell(20, altura_fila, cant, 1, 0, 'C')
+            pdf.cell(0, 2, "="*35, ln=True, align="C")
+            pdf.ln(2)
 
-                
-                pdf.multi_cell(ancho_prod, 7, prod, 1, 'L')
-
-                
-                pdf.set_xy(10 + 20 + ancho_prod, inicio_y)
-                pdf.cell(40, altura_fila, subt, 1, 1, 'R')
-                
-                
-                pdf.set_y(inicio_y + altura_fila)
-
-            # --- TOTALES ---
-            pdf.ln(5)
+            # TOTALES (Letra más grande y negrita)
+            pdf.set_font("Arial", "", 9)
+            pdf.cell(45, 6, f"NO. DE ARTICULOS: {total_articulos}", 0, 1)
+            
             pdf.set_font("Arial", "B", 12)
-            pdf.cell(150, 8, "TOTAL:", 0, 0, 'R')
+            pdf.cell(40, 8, "TOTAL:", 0, 0)
             pdf.cell(30, 8, f"${self.total_actual:.2f}", 0, 1, 'R')
             
-            pdf.cell(150, 8, "PAGÓ CON:", 0, 0, 'R')
-            pdf.cell(30, 8, f"${monto_pago:.2f}", 0, 1, 'R')
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(40, 6, "PAGO CON:", 0, 0)
+            pdf.cell(30, 6, f"${monto_pago:.2f}", 0, 1, 'R')
             
-            if cambio > 0:
-                pdf.set_text_color(200, 0, 0)
-                pdf.cell(150, 8, "CAMBIO:", 0, 0, 'R')
-                pdf.cell(30, 8, f"${cambio:.2f}", 0, 1, 'R')
-            
+            pdf.cell(40, 6, "SU CAMBIO:", 0, 0)
+            pdf.cell(30, 6, f"${cambio:.2f}", 0, 1, 'R')
+            pdf.ln(5)
+
+            # PIE DE PÁGINA
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(0, 5, "*** COPIA DE TICKET ***", ln=True, align="C")
+            pdf.ln(3)
+            pdf.set_font("Arial", "", 8)
+            pdf.cell(0, 4, "¡GRACIAS POR SU COMPRA!", ln=True, align="C")
+            pdf.cell(0, 4, "VUELVA PRONTO", ln=True, align="C")
+            pdf.ln(3)
+            pdf.cell(0, 5, f"ENTREGA: {direccion}", ln=True, align="C")
+
             pdf.output(nombre_pdf)
-            messagebox.showinfo("Éxito", f"Venta guardada.\nCambio: ${cambio:.2f}")
+            messagebox.showinfo("Éxito", "Ticket generado correctamente")
             
+            # Limpiar interfaz
             self.ent_direccion.delete(0, tk.END)
             self.ent_pago.delete(0, tk.END)
             self.limpiar_ticket()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error crítico al generar ticket: {e}")
+            messagebox.showerror("Error", f"Error al generar ticket: {e}")
 
     def ventana_termino_barbacoa(self, precio_base):
         self.win_termino = tk.Toplevel(self.root)
